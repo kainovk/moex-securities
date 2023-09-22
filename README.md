@@ -87,3 +87,6 @@ Flyway will apply migrations to your database after starting the program.
 
 2. Get all info \
    `GET /info`
+
+
+### Stack: Scala, Http4s, Cats, cats-effect, doobie, PostgreSQL, Flyway
