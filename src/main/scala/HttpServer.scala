@@ -1,9 +1,9 @@
 package org.kainovk
 
-import api.{HistoryRoutes, SecurityRoutes}
+import api.{HistoryRoutes, InfoRoutes, SecurityRoutes}
 import config.Config
 import db.Database
-import repository.impl.{DoobieHistoryRepository, DoobieSecurityRepository}
+import repository.impl.{DoobieHistoryRepository, DoobieInfoRepository, DoobieSecurityRepository}
 
 import scala.concurrent.ExecutionContext.global
 import cats.effect._
@@ -30,11 +30,17 @@ object HttpServer {
   private def create(resources: Resources): IO[ExitCode] = {
     for {
       _ <- Database.initialize(resources.transactor)
+
       securityRepository = new DoobieSecurityRepository(resources.transactor)
-      historyRepository = new DoobieHistoryRepository(resources.transactor)
       securityRoutes = new SecurityRoutes(securityRepository).routes
+
+      historyRepository = new DoobieHistoryRepository(resources.transactor)
       historyRoutes = new HistoryRoutes(historyRepository).routes
-      routes = securityRoutes <+> historyRoutes
+
+      infoRepository = new DoobieInfoRepository(resources.transactor)
+      infoRoutes = new InfoRoutes(securityRepository, historyRepository, infoRepository).routes
+
+      routes = securityRoutes <+> historyRoutes <+> infoRoutes
       exitCode <- BlazeServerBuilder[IO]
         .bindHttp(resources.config.server.port, resources.config.server.host)
         .withHttpApp(routes.orNotFound).serve.compile.lastOrError

@@ -34,6 +34,17 @@ class DoobieSecurityRepository(tx: Transactor[IO]) extends SecurityRepository {
       .transact(tx)
   }
 
+  override def getSecurityBySecid(secid: String): IO[Option[SecurityWithId]] = {
+    sql"""
+          SELECT id, secid, regnumber, name, emitent_title
+          FROM securities
+          WHERE secid = $secid
+       """
+      .query[SecurityWithId]
+      .option
+      .transact(tx)
+  }
+
   override def getSecurities(): IO[List[SecurityWithId]] = {
     sql"""
           SELECT id, secid, regnumber, name, emitent_title
