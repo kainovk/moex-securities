@@ -26,7 +26,8 @@ case class History(secid: String,
                    // TODO: LocalDate + encoder, decoder
                    tradedate: String,
                    numtrades: Int,
-                   open: Option[Double]) {
+                   open: Option[Double],
+                   close: Option[Double]) {
   def isValidDate: Boolean = try {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     dateFormat.setLenient(false)
@@ -38,11 +39,12 @@ case class History(secid: String,
 }
 
 object History {
-  implicit val historyDecoder: Decoder[History] = Decoder.forProduct4(
+  implicit val historyDecoder: Decoder[History] = Decoder.forProduct5(
     "secid",
     "tradedate",
     "numtrades",
-    "open"
+    "open",
+    "close"
   )(History.apply)
 
   implicit val historyEncoder: Encoder[History] = deriveEncoder[History]

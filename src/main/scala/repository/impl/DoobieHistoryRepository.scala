@@ -18,20 +18,20 @@ class DoobieHistoryRepository(tx: Transactor[IO]) extends HistoryRepository {
   override def createHistory(h: History): IO[History] = {
     val date: Date = format.parse(h.tradedate)
     sql"""
-        INSERT INTO securities_history (secid, tradedate, numtrades, open)
-        VALUES (${h.secid}, $date, ${h.numtrades}, ${h.open})
+        INSERT INTO securities_history (secid, tradedate, numtrades, open, close)
+        VALUES (${h.secid}, $date, ${h.numtrades}, ${h.open}, ${h.close})
       """
       .update
       .run
       .transact(tx)
       .map {
-        _ => History(h.secid, h.tradedate, h.numtrades, h.open)
+        _ => History(h.secid, h.tradedate, h.numtrades, h.open, h.close)
       }
   }
 
   override def getHistoryBySecid(secid: String): IO[List[History]] = {
     sql"""
-        SELECT secid, tradedate, numtrades, open
+        SELECT secid, tradedate, numtrades, open, close
         FROM securities_history
         WHERE secid = $secid
       """
@@ -43,7 +43,7 @@ class DoobieHistoryRepository(tx: Transactor[IO]) extends HistoryRepository {
   override def getHistoryByDate(dateStr: String): IO[List[History]] = {
     val date: Date = format.parse(dateStr)
     sql"""
-        SELECT secid, tradedate, numtrades, open
+        SELECT secid, tradedate, numtrades, open, close
         FROM securities_history
         WHERE tradedate = $date
       """
@@ -56,7 +56,7 @@ class DoobieHistoryRepository(tx: Transactor[IO]) extends HistoryRepository {
     val date: Date = format.parse(h.tradedate)
     sql"""
         UPDATE securities_history
-        SET numtrades = ${h.numtrades}, open = ${h.open}
+        SET numtrades = ${h.numtrades}, open = ${h.open}, close = ${h.close}
         WHERE secid = ${h.secid} AND tradedate = $date
       """
       .update
