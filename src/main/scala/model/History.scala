@@ -26,7 +26,7 @@ case class History(secid: String,
                    // TODO: LocalDate + encoder, decoder
                    tradedate: String,
                    numtrades: Int,
-                   open: Double) {
+                   open: Option[Double]) {
   def isValidDate: Boolean = try {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
     dateFormat.setLenient(false)
