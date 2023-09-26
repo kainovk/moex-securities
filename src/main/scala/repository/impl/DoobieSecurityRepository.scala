@@ -5,8 +5,10 @@ import model.{Security, SecurityWithId}
 import repository.SecurityRepository
 
 import cats.effect.IO
+import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import doobie.util.update.Update
 
 class DoobieSecurityRepository(tx: Transactor[IO]) extends SecurityRepository {
 
@@ -21,6 +23,27 @@ class DoobieSecurityRepository(tx: Transactor[IO]) extends SecurityRepository {
       .map {
         id => SecurityWithId(id = Some(id), s.secid, s.regnumber, s.name, s.emitentTitle)
       }
+  }
+
+  override def createSecurities(securities: List[Security]): IO[List[SecurityWithId]] = {
+    val insertFragment =
+      fr"""
+        INSERT INTO securities (secid, regnumber, name, emitent_title)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT (secid) DO NOTHING
+      """
+
+    val insertAction = Update[Security](insertFragment.query.sql)
+
+    val insertAndReturnKeys: ConnectionIO[List[SecurityWithId]] =
+      insertAction.updateManyWithGeneratedKeys[Int]("id")(securities).compile.toList
+        .map { generatedIds =>
+          securities.zip(generatedIds).map { case (s, id) =>
+            SecurityWithId(id = Some(id), s.secid, s.regnumber, s.name, s.emitentTitle)
+          }
+        }
+
+    insertAndReturnKeys.transact(tx)
   }
 
   override def getSecurity(id: Int): IO[Option[SecurityWithId]] = {

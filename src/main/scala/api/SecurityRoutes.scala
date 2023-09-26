@@ -9,6 +9,9 @@ import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
 import org.http4s.dsl._
+import org.http4s.multipart.{Multipart, Part}
+
+import scala.xml.XML
 
 class SecurityRoutes(repo: SecurityRepository) extends Http4sDsl[IO] {
 
@@ -24,6 +27,28 @@ class SecurityRoutes(repo: SecurityRepository) extends Http4sDsl[IO] {
         .handleErrorWith {
           case InvalidMessageBodyFailure(_, _) => BadRequest()
         }
+
+    case req@POST -> Root / "securities" / "upload-xml" =>
+      req.decode[Multipart[IO]] { multipart =>
+        val xmlFileOpt = multipart.parts.collectFirst {
+          case part if isXmlFile(part) => part
+        }
+
+        xmlFileOpt match {
+          case Some(xmlFile) =>
+            xmlFile.body.compile.toVector.flatMap { bytes =>
+              val xmlData = new String(bytes.toArray, "UTF-8")
+              val securities = parseXml(xmlData)
+              for {
+                insertedSecurities <- repo.createSecurities(securities)
+                resp <- Ok(insertedSecurities)
+              } yield resp
+            }
+
+          case None =>
+            BadRequest("No XML file found in the request")
+        }
+      }
 
     case GET -> Root / "securities" / IntVar(id) =>
       for {
@@ -60,5 +85,15 @@ class SecurityRoutes(repo: SecurityRepository) extends Http4sDsl[IO] {
         deleted <- repo.deleteSecurity(id)
         resp <- if (deleted) Ok() else NotFound()
       } yield resp
+  }
+
+  private def isXmlFile(part: Part[IO]): Boolean = {
+    part.filename.exists(_.matches("securities_.*\\.xml"))
+  }
+
+  private def parseXml(xmlData: String): List[Security] = {
+    val elem = XML.loadString(xmlData)
+    val securityElems = elem \\ "row"
+    securityElems.map(Security.fromXml).toList
   }
 }

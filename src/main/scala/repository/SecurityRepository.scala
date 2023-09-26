@@ -9,6 +9,8 @@ trait SecurityRepository {
 
   def createSecurity(security: Security): IO[SecurityWithId]
 
+  def createSecurities(securities: List[Security]): IO[List[SecurityWithId]]
+
   def getSecurity(id: Int): IO[Option[SecurityWithId]]
 
   def getSecurityBySecid(secid: String): IO[Option[SecurityWithId]]

@@ -43,7 +43,7 @@ class InfoRoutes(securityRepo: SecurityRepository,
 
     case GET -> Root / "info" =>
       for {
-        info <- infoRepo.getInfo()
+        info <- infoRepo.getInfo
         resp <- Ok(info)
       } yield resp
   }

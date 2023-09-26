@@ -18,9 +18,11 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-hikari" % "1.0.0-M5",
   "org.tpolecat" %% "doobie-postgres" % "1.0.0-M5",
 
+  "org.http4s" %% "http4s-core" % "0.23.18",
   "org.http4s" %% "http4s-dsl" % "0.23.18",
   "org.http4s" %% "http4s-blaze-server" % "0.23.14",
   "org.http4s" %% "http4s-circe" % "0.23.18",
+  "org.http4s" %% "http4s-scala-xml" % "0.23.13",
 
   "org.typelevel" %% "kittens" % "3.0.0",
 
@@ -34,4 +36,6 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.9.0",
 
   "ch.qos.logback" % "logback-classic" % "1.4.7",
+
+  "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
 )
