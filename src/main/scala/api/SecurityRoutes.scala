@@ -11,7 +11,7 @@ import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder
 import org.http4s.dsl._
 import org.http4s.multipart.{Multipart, Part}
 
-import scala.xml.XML
+import scala.xml.{NodeSeq, XML}
 
 class SecurityRoutes(repo: SecurityRepository) extends Http4sDsl[IO] {
 
@@ -93,7 +93,8 @@ class SecurityRoutes(repo: SecurityRepository) extends Http4sDsl[IO] {
 
   private def parseXml(xmlData: String): List[Security] = {
     val elem = XML.loadString(xmlData)
-    val securityElems = elem \\ "row"
-    securityElems.map(Security.fromXml).toList
+    val dataElem = elem \\ "data" find (_.attribute("id").exists(_.text == "securities"))
+    val rowElems = dataElem.map(_ \\ "row").getOrElse(NodeSeq.Empty)
+    rowElems.map(Security.fromXml).toList
   }
 }

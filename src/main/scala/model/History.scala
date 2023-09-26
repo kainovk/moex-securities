@@ -6,6 +6,7 @@ import io.circe.generic.semiauto._
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import scala.xml.Node
 
 case class DateWrapper(tradedate: String) {
   def toDate: Option[Date] = {
@@ -48,4 +49,14 @@ object History {
   )(History.apply)
 
   implicit val historyEncoder: Encoder[History] = deriveEncoder[History]
+
+  def fromXml(rowElem: Node): History = {
+    val secid = rowElem.attribute("SECID").map(_.text).getOrElse("")
+    val tradedate = rowElem.attribute("TRADEDATE").map(_.text).getOrElse("")
+    val numtrades = rowElem.attribute("NUMTRADES").map(_.text.toInt).getOrElse(0)
+    val open = rowElem.attribute("OPEN").flatMap(_.text.toDoubleOption)
+    val close = rowElem.attribute("CLOSE").flatMap(_.text.toDoubleOption)
+
+    History(secid, tradedate, numtrades, open, close)
+  }
 }

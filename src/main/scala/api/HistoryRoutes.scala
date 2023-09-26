@@ -9,9 +9,11 @@ import org.http4s._
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe.CirceSensitiveDataEntityDecoder.circeEntityDecoder
 import org.http4s.dsl._
+import org.http4s.multipart.{Multipart, Part}
 
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
+import scala.xml.{NodeSeq, XML}
 
 class HistoryRoutes(repo: HistoryRepository) extends Http4sDsl[IO] {
 
@@ -31,6 +33,28 @@ class HistoryRoutes(repo: HistoryRepository) extends Http4sDsl[IO] {
         .handleErrorWith {
           case InvalidMessageBodyFailure(_, _) => BadRequest()
         }
+
+    case req@POST -> Root / "history" / "upload-xml" =>
+      req.decode[Multipart[IO]] { multipart =>
+        val xmlFileOpt = multipart.parts.collectFirst {
+          case part if isXmlFile(part) => part
+        }
+
+        xmlFileOpt match {
+          case Some(xmlFile) =>
+            xmlFile.body.compile.toVector.flatMap { bytes =>
+              val xmlData = new String(bytes.toArray, "UTF-8")
+              val history = parseXml(xmlData)
+              for {
+                insertedHistory <- repo.createHistory(history)
+                resp <- Ok(insertedHistory)
+              } yield resp
+            }
+
+          case None =>
+            BadRequest("No XML file found in the request")
+        }
+      }
 
     case GET -> Root / "history" / secid =>
       for {
@@ -76,5 +100,16 @@ class HistoryRoutes(repo: HistoryRepository) extends Http4sDsl[IO] {
         deleted <- repo.deleteHistory(secid)
         resp <- if (deleted) Ok() else NotFound()
       } yield resp
+  }
+
+  private def isXmlFile(part: Part[IO]): Boolean = {
+    part.filename.exists(_.matches("history_.*\\.xml"))
+  }
+
+  private def parseXml(xmlData: String): List[History] = {
+    val elem = XML.loadString(xmlData)
+    val dataElem = elem \\ "data" find (_.attribute("id").exists(_.text == "history"))
+    val rowElems = dataElem.map(_ \\ "row").getOrElse(NodeSeq.Empty)
+    rowElems.map(History.fromXml).toList
   }
 }

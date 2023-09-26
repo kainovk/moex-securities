@@ -9,6 +9,8 @@ trait HistoryRepository {
 
   def createHistory(history: History): IO[History]
 
+  def createHistory(histories: List[History]): IO[List[History]]
+
   def getHistoryBySecid(secid: String): IO[List[History]]
 
   def getHistoryByDate(date: String): IO[List[History]]
