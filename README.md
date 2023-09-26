@@ -43,6 +43,11 @@ Flyway will apply migrations to your database after starting the program.
 5. Delete security by id \
    `DELETE /securities/{id}`
 
+6. Upload security xml file \
+   `POST /securities/upload-xml` \
+   Filename should match format `securities_*.xml` \
+   See [example](src/main/resources/examples/securities_test.xml)
+
 ### *History*
 
 1. Add history \
@@ -79,6 +84,11 @@ Flyway will apply migrations to your database after starting the program.
 
 5. Delete hisotry by secid \
    `DELETE /history/{secid}`
+
+6. Upload history xml file \
+   `POST /history/upload-xml` \
+   Filename should match format `history_*.xml` \
+   See [example](src/main/resources/examples/history_test.xml)
 
 ### *Info*
 
