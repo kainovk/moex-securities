@@ -4,14 +4,16 @@ import api.{HistoryRoutes, InfoRoutes, SecurityRoutes}
 import config.Config
 import db.Database
 import repository.impl.{DoobieHistoryRepository, DoobieInfoRepository, DoobieSecurityRepository}
+import service.impl.{HistoryServiceImpl, InfoServiceImpl, SecurityServiceImpl}
 
-import scala.concurrent.ExecutionContext.global
 import cats.effect._
 import cats.implicits.toSemigroupKOps
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.implicits._
+
+import scala.concurrent.ExecutionContext.global
 
 object HttpServer {
 
@@ -32,13 +34,16 @@ object HttpServer {
       _ <- Database.initialize(resources.transactor)
 
       securityRepository = new DoobieSecurityRepository(resources.transactor)
-      securityRoutes = new SecurityRoutes(securityRepository).routes
+      securityService = new SecurityServiceImpl(securityRepository)
+      securityRoutes = new SecurityRoutes(securityService).routes
 
       historyRepository = new DoobieHistoryRepository(resources.transactor)
-      historyRoutes = new HistoryRoutes(historyRepository).routes
+      historyService = new HistoryServiceImpl(historyRepository)
+      historyRoutes = new HistoryRoutes(historyService).routes
 
       infoRepository = new DoobieInfoRepository(resources.transactor)
-      infoRoutes = new InfoRoutes(securityRepository, historyRepository, infoRepository).routes
+      infoService = new InfoServiceImpl(infoRepository, securityService, historyService)
+      infoRoutes = new InfoRoutes(infoService).routes
 
       routes = securityRoutes <+> historyRoutes <+> infoRoutes
       exitCode <- BlazeServerBuilder[IO]
